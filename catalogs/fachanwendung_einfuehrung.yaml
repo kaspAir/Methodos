@@ -1,0 +1,118 @@
+# =====================================================================
+# Referenzkatalog: Einfuehrung einer Fachanwendung
+#                  (Digitalisierungsprojekt inkl. Organisationsanpassung)
+# =====================================================================
+# Dieser Katalog enthaelt ABGELEITETES, aggregiertes Erfahrungswissen -
+# keine Rohdaten aus echten Projekten. Er ist die Wissensquelle, mit der
+# Methodos abgleicht und aktiv nachfragt ("In vergleichbaren Projekten
+# ist X ueblich - bewusst weggelassen?").
+#
+# Quelle fuer Montag: kuratiert aus dem HERMES-Standard + Fachwissen.
+# Spaeter: derselbe Katalog wird aus dem ANONYMISIERTEN Korpus
+# (via Mnemosyne) automatisch befuellt - gleiche Struktur, andere Quelle.
+#
+# 'salience' (0.0-1.0): wie typisch der Eintrag fuer diesen Projekttyp ist.
+#   >= 0.8  => Methodos fragt nach, wenn der Eintrag fehlt.
+
+project_type:
+  id: fachanwendung_einfuehrung
+  name: "Einfuehrung einer Fachanwendung"
+  description: >
+    Beschaffung/Entwicklung und Einfuehrung einer fachlichen IT-Anwendung,
+    verbunden mit Anpassungen der Aufbau- und Ablauforganisation.
+  applies_to_method: hermes_pia
+
+# ---------------------------------------------------------------------
+# Typische ZIELE (Abschnitt 2.1)
+# ---------------------------------------------------------------------
+ziele:
+  - id: z_systemziel_fachfunktion
+    kategorie: "Systemziel"
+    beschreibung: "Fachprozess X wird durch die neue Anwendung medienbruchfrei unterstuetzt."
+    messgroesse: "Anteil digital abgewickelter Faelle"
+    salience: 0.7
+  - id: z_vorgehensziel_studie
+    kategorie: "Vorgehensziel"
+    beschreibung: "Belastbare Studie mit Variantenvergleich liegt am Ende der Initialisierung vor."
+    messgroesse: "Abnahme der Studie durch Auftraggeber"
+    salience: 0.8
+
+# ---------------------------------------------------------------------
+# Typische LIEFERERGEBNISSE der Initialisierung (Abschnitt 4.1)
+# Viele sind HERMES-Minimalergebnisse und sollten fast immer da sein.
+# ---------------------------------------------------------------------
+lieferergebnisse:
+  - { id: le_stakeholder, name: "Stakeholder-Liste", salience: 0.9 }
+  - { id: le_studie, name: "Studie (mit Variantenvergleich)", salience: 0.95 }
+  - { id: le_rechtsgrundlagen, name: "Rechtsgrundlagenanalyse", salience: 0.85 }
+  - { id: le_schutzbedarf, name: "Schutzbedarfsanalyse (ISDS)", salience: 0.9 }
+  - { id: le_pmplan, name: "Projektmanagementplan", salience: 0.9 }
+  - { id: le_durchfuehrungsauftrag, name: "Durchfuehrungsauftrag", salience: 0.9 }
+
+# ---------------------------------------------------------------------
+# Typische RISIKEN (Abschnitt 7) - das Herzstueck der Demo
+# Eintraege mit salience >= 0.8 loesen eine Nachfrage aus, wenn sie
+# im eingegebenen PIA keine Entsprechung haben.
+# ---------------------------------------------------------------------
+risiken:
+  - id: r_schluesselpersonen
+    beschreibung: "Verfuegbarkeit von Schluesselpersonen / Fachexperten nicht gesichert"
+    kategorie: "Ressourcen"
+    salience: 0.9
+    nachfrage: >
+      In vergleichbaren Fachanwendungs-Einfuehrungen ist die Verfuegbarkeit
+      von Schluesselpersonen fast immer ein zentrales Risiko. Wurde das hier
+      bewusst weggelassen, oder sollen wir es ergaenzen?
+    schlagworte: ["schluesselperson", "fachexperte", "verfuegbarkeit", "ressource", "personal"]
+
+  - id: r_akzeptanz
+    beschreibung: "Geringe Akzeptanz der Anwender / Widerstand gegen die Organisationsaenderung"
+    kategorie: "Change / Organisation"
+    salience: 0.9
+    nachfrage: >
+      Da das Vorhaben Organisationsanpassungen umfasst, ist Anwenderakzeptanz
+      typischerweise ein wesentliches Risiko. Soll ich es aufnehmen?
+    schlagworte: ["akzeptanz", "widerstand", "change", "anwender", "betroffene"]
+
+  - id: r_datenmigration
+    beschreibung: "Datenmigration / Datenqualitaet aus Altsystemen unzureichend"
+    kategorie: "Daten"
+    salience: 0.85
+    nachfrage: >
+      Bei der Abloesung bestehender Loesungen ist Datenmigration/-qualitaet
+      ein haeufiges Risiko. Ist das hier relevant?
+    schlagworte: ["migration", "datenqualitaet", "altsystem", "daten"]
+
+  - id: r_anforderungen
+    beschreibung: "Unklare oder instabile fachliche Anforderungen"
+    kategorie: "Anforderungen"
+    salience: 0.8
+    nachfrage: >
+      Unklare Anforderungen sind in der Initialisierung ein klassisches Risiko.
+      Bewusst nicht aufgefuehrt?
+    schlagworte: ["anforderung", "scope", "unklar", "instabil"]
+
+  - id: r_datenschutz
+    beschreibung: "Datenschutz- und Informationssicherheitsauflagen (Schutzbedarf) unterschaetzt"
+    kategorie: "Recht / Sicherheit"
+    salience: 0.8
+    nachfrage: >
+      Fachanwendungen mit Personendaten unterliegen oft hohen Schutzbedarfs-
+      auflagen. Soll dieses Risiko erfasst werden?
+    schlagworte: ["datenschutz", "informationssicherheit", "schutzbedarf", "isds", "dsg"]
+
+  - id: r_beschaffung
+    beschreibung: "Verzoegerung durch oeffentliche Beschaffung / Lieferantenabhaengigkeit"
+    kategorie: "Beschaffung"
+    salience: 0.7
+    nachfrage: >
+      Bei externer Beschaffung ist das Vergabe-/Lieferantenrisiko oft relevant.
+      Aufnehmen?
+    schlagworte: ["beschaffung", "vergabe", "lieferant", "wto", "ausschreibung"]
+
+# ---------------------------------------------------------------------
+# Typische RAHMENBEDINGUNGEN (Abschnitt 2.2)
+# ---------------------------------------------------------------------
+rahmenbedingungen:
+  - { id: rb_hermes, vorgaben: "Anwendung von HERMES", beschreibung: "Version HERMES 2022", salience: 0.99 }
+  - { id: rb_isds, vorgaben: "Informationssicherheit und Datenschutz", beschreibung: "ISDS-Vorgaben der Stammorganisation", salience: 0.8 }

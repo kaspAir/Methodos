@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+  <h1>{{ method.method.name }} <small>({{ method.method.framework }})</small></h1>
+  <p>{{ method.method.description }}</p>
+  <h2>Abschnitte</h2>
+  <ol>
+    {% for s in sections %}
+      <li>{{ s.number }} &mdash; {{ s.title }} <em>({{ s.type }}{% if s.gap_check %}, Nachfrage aktiv{% endif %})</em></li>
+    {% endfor %}
+  </ol>
+  <p><a href="/demo/followups">Demo: Nachfrage-Verhalten (JSON)</a></p>
+{% endblock %}
