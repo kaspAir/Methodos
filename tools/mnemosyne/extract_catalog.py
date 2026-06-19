@@ -28,6 +28,10 @@ import sys
 import textwrap
 from pathlib import Path
 
+# .env laden (sucht im aktuellen Verzeichnis und allen Eltern-Ordnern)
+from dotenv import load_dotenv
+load_dotenv()
+
 import anthropic
 import yaml
 

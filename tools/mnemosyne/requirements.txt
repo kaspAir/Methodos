@@ -14,3 +14,6 @@ anthropic>=0.49.0
 
 # YAML-Ausgabe
 PyYAML>=6.0.1
+
+# .env-Support
+python-dotenv>=1.0.0
