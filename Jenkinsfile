@@ -1,18 +1,18 @@
-// Methodos CI/CD-Pipeline
+// HERMES PIA CI/CD-Pipeline
 //
-// Stages:
-//   1. Regressionstests  – sauberer python:3.12-slim-Container
-//   2. Deploy prod       – Branch 'main'  → hermespia.ch (Port 8000, Gunicorn)
-//   3. Deploy test       – Branch 'test'  → hermespia.ch (Port 8001, Gunicorn)
+// Stages pro Pipeline-Job:
+//   hermes-pia develop     → nur Regressionstests (kein Deploy)
+//   hermes-pia test        → Tests + Deploy test  (origin/test  → Port 8001, test.hermespia.ch)
+//   hermes-pia integration → Tests + Deploy prod  (origin/main  → Port 8000, hermespia.ch)
+//   hermes-pia main        → Tests + Deploy prod  (origin/main  → Port 8000, hermespia.ch)
 //
 // Voraussetzungen Jenkins:
 //   - SSH-Credential 'hermespia-deploy' (privater Key für u7031y_kaspar@83.228.238.194)
-//   - Docker + Docker-Pipeline-Plugin (nur für Testcontainer)
+//   - Docker + Docker-Pipeline-Plugin (für Testcontainer)
 //
 // Voraussetzungen Server hermespia.ch:
 //   - Python-venv unter ~/venv, Methodos-Repo unter ~/methodos
 //   - .env mit ANTHROPIC_API_KEY und FLASK_SECRET_KEY
-//   - ~/bin/start-methodos.sh für Gunicorn-Start
 
 pipeline {
     agent any
@@ -28,6 +28,7 @@ pipeline {
         DEPLOY_HOST = 'u7031y_kaspar@83.228.238.194'
         APP_DIR     = '/home/clients/2a1849703150229016af3666c2f46b09/methodos'
         VENV        = '/home/clients/2a1849703150229016af3666c2f46b09/venv'
+        REPO_URL    = 'https://github.com/kaspAir/HERMES-PIA'
     }
 
     stages {
@@ -52,6 +53,11 @@ pipeline {
         }
 
         stage('Deploy prod') {
+            when {
+                expression {
+                    env.JOB_NAME.contains('main') || env.JOB_NAME.contains('integration')
+                }
+            }
             steps {
                 sshagent(credentials: ['hermespia-deploy']) {
                     sh """
@@ -78,11 +84,18 @@ pipeline {
         }
 
         stage('Deploy test') {
+            when {
+                expression {
+                    env.JOB_NAME.contains('test')
+                }
+            }
             steps {
                 sshagent(credentials: ['hermespia-deploy']) {
                     sh """
                         ssh -o StrictHostKeyChecking=no ${DEPLOY_HOST} '
-                            cd \$HOME/methodos-test 2>/dev/null || git clone ${APP_DIR} \$HOME/methodos-test
+                            if [ ! -d "\$HOME/methodos-test/.git" ]; then
+                                git clone ${REPO_URL} \$HOME/methodos-test
+                            fi
                             cd \$HOME/methodos-test
                             git fetch origin
                             git reset --hard origin/test
@@ -91,9 +104,12 @@ pipeline {
                             PID_FILE=\$HOME/tmp/gunicorn-test.pid
                             [ -f "\$PID_FILE" ] && kill \$(cat "\$PID_FILE") 2>/dev/null || true
                             sleep 1
-                            set -a; source \$HOME/methodos/.env; set +a
+                            set -a
+                            source \$HOME/methodos/.env
                             DATABASE_URL=sqlite:///\$HOME/methodos-test/data/methodos-test.db
+                            set +a
                             mkdir -p \$HOME/methodos-test/data \$HOME/methodos-test/logs
+                            cd \$HOME/methodos-test
                             nohup gunicorn run:app \\
                                 --bind 127.0.0.1:8001 --workers 1 --timeout 120 \\
                                 --access-logfile logs/access.log \\
