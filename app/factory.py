@@ -7,7 +7,8 @@ from app.domains.generation.service import GenerationService
 from app.domains.interview.service import InterviewService
 from app.domains.llm.client import LLMClient
 from app.domains.method.service import MethodService
-from app.shared.database import SessionLocal, init_engine
+import app.domains.interview.models  # noqa: F401 – ensures models are registered before create_all
+from app.shared.database import Base, SessionLocal, init_engine
 from app.shared.errors import register_error_handlers
 from app.shared.logging import configure_logging, register_request_logging
 from app.web.ui_routes import bp as ui_bp
@@ -37,12 +38,14 @@ def _migrate_db(engine):
 def create_app(config_class=None):
     app = Flask(__name__)
     app.config.from_object(config_class or get_config())
+    app.secret_key = app.config.get("SECRET_KEY", "dev-only-change-in-prod")
 
     configure_logging(app)
     register_error_handlers(app)
     register_request_logging(app)
 
     engine = init_engine(app.config["DATABASE_URL"], echo=app.config.get("SQL_ECHO", False))
+    Base.metadata.create_all(engine)
     _migrate_db(engine)
 
     # Services aus der Konfiguration aufbauen ("Konfiguration vor Programmierung").
