@@ -44,6 +44,10 @@ STYLE_HELP = 'HHilfstextfarbigkursiv105ptF'
 STYLE_EXAMPLE = 'HTabBeispiel85ptF'
 STYLE_DATA = 'HTabText85pt'
 
+# Rollenbezeichnungen, die für den Projektleiter stehen (normalisiert).
+PL_ROLLEN = {'projektleiter', 'projektleiterin', 'projektleiter/in',
+             'projektleitung', 'pl'}
+
 
 class GenerationService:
     def __init__(self, method_service):
@@ -69,7 +73,7 @@ class GenerationService:
 
         self._fill_cover(doc, metadata)
         self._fill_headers(doc, metadata)
-        self._fill_body(doc, method, session_answers)
+        self._fill_body(doc, method, session_answers, metadata)
         if changelog:
             self._fill_aenderungskontrolle(doc, changelog)
         self._delete_style(doc, STYLE_HELP)
@@ -193,7 +197,7 @@ class GenerationService:
     # Abschnitte (Fliesstext + Tabellen)                                  #
     # ------------------------------------------------------------------ #
 
-    def _fill_body(self, doc, method, session_answers):
+    def _fill_body(self, doc, method, session_answers, metadata=None):
         sections = {s['id']: s for s in method.get('sections', [])}
         body = doc.element.body
         children = list(body)
@@ -211,7 +215,7 @@ class GenerationService:
                     sect = sections[current_sid]
                     if sect.get('type') == 'table':
                         extracted = session_answers[current_sid].get('extracted') or []
-                        self._fill_table(el, sect, extracted)
+                        self._fill_table(el, sect, extracted, metadata)
                     current_sid = None
             elif tag == 'sdt':
                 current_sid = None
@@ -253,9 +257,11 @@ class GenerationService:
     # Tabellen befüllen                                                    #
     # ------------------------------------------------------------------ #
 
-    def _fill_table(self, tbl_el, section, data_rows):
+    def _fill_table(self, tbl_el, section, data_rows, metadata=None):
         if not data_rows:
             return
+
+        pl_name = (metadata or {}).get('projektleiter', '')
 
         has_nr = any(c.get('id') == 'nr' for c in section.get('columns', []))
         columns = [c['id'] for c in section.get('columns', []) if c.get('id') != 'nr']
@@ -299,6 +305,13 @@ class GenerationService:
                         data[cid] = str(result) if result else ''
                     except (ValueError, TypeError):
                         pass
+
+            # Projektleiter-Name eintragen, wo die Rolle bekannt ist und eine
+            # Name-Spalte existiert (z.B. Personalaufwand-Zeile "Projektleiter").
+            if pl_name and 'name' in columns and 'rolle' in columns \
+                    and not str(data.get('name', '')).strip() \
+                    and _normalize(str(data.get('rolle', ''))) in PL_ROLLEN:
+                data['name'] = pl_name
 
             # Alle Zellen in Reihenfolge sammeln – inkl. SDT-umhüllter Zellen
             # (Dropdown-/Combobox-Spalten liegen als <w:sdt><w:sdtContent><w:tc> vor)

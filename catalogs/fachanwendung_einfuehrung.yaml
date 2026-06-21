@@ -38,16 +38,25 @@ ziele:
     salience: 0.8
 
 # ---------------------------------------------------------------------
-# Typische LIEFERERGEBNISSE der Initialisierung (Abschnitt 4.1)
-# Viele sind HERMES-Minimalergebnisse und sollten fast immer da sein.
+# Lieferergebnisse und Meilensteine der Phase Initialisierung
+# (Abschnitt 4.1 "Ergebnisse und Termine"), gemaess HERMES 2022:
+#   - Mandat = "Durchführungsauftrag" (NICHT "Projektauftrag")
+#   - Die Phase Initialisierung hat KEINEN Phasenbericht
+#   - Drei Entscheidaufgaben enden je mit einem Meilenstein
+#   - Verantwortung (Abnahme) auf Rollenebene
+# Feldnamen = Spalten-IDs der method.yaml (ergebnis/termin/abnahme/pruefmethode).
 # ---------------------------------------------------------------------
-lieferergebnisse:
-  - { id: le_stakeholder, name: "Stakeholder-Liste", salience: 0.9 }
-  - { id: le_studie, name: "Studie (mit Variantenvergleich)", salience: 0.95 }
-  - { id: le_rechtsgrundlagen, name: "Rechtsgrundlagenanalyse", salience: 0.85 }
-  - { id: le_schutzbedarf, name: "Schutzbedarfsanalyse (ISDS)", salience: 0.9 }
-  - { id: le_pmplan, name: "Projektmanagementplan", salience: 0.9 }
-  - { id: le_durchfuehrungsauftrag, name: "Durchfuehrungsauftrag", salience: 0.9 }
+termine:
+  - { ergebnis: "Projektinitialisierungsfreigabe (Meilenstein)", abnahme: "Auftraggeber" }
+  - { ergebnis: "Stakeholderliste", abnahme: "Auftraggeber" }
+  - { ergebnis: "Studie (mit Variantenvergleich)", abnahme: "Auftraggeber" }
+  - { ergebnis: "Rechtsgrundlagenanalyse", abnahme: "Auftraggeber" }
+  - { ergebnis: "Schutzbedarfsanalyse (ISDS)", abnahme: "Auftraggeber" }
+  - { ergebnis: "Beschaffungsanalyse (sofern Beschaffung)", abnahme: "Auftraggeber" }
+  - { ergebnis: "Entscheid Weiteres Vorgehen (Meilenstein)", abnahme: "Auftraggeber" }
+  - { ergebnis: "Projektmanagementplan", abnahme: "Auftraggeber" }
+  - { ergebnis: "Durchführungsauftrag", abnahme: "Auftraggeber" }
+  - { ergebnis: "Durchführungsfreigabe (Meilenstein)", abnahme: "Auftraggeber / Stammorganisation" }
 
 # ---------------------------------------------------------------------
 # Typische RISIKEN (Abschnitt 7) - das Herzstueck der Demo
