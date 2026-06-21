@@ -6,6 +6,23 @@ Es entscheidet NICHT, ob eine Luecke vorliegt - das ist Sache des gap_check.
 import json
 import re
 
+# Verbindliche HERMES-2022-Vorgaben, die in jeden generierenden Prompt einfliessen.
+# Stand: offizielles HERMES-2022-Referenzhandbuch (Phase Initialisierung).
+HERMES_RULES = (
+    "Verbindliche HERMES-2022-Vorgaben (immer einhalten):\n"
+    "- Das Mandat fuer die Loesungsentstehung heisst 'Durchfuehrungsauftrag' - "
+    "NIEMALS 'Projektauftrag' (den Begriff gibt es in HERMES 2022 nicht).\n"
+    "- Die Phase Initialisierung hat KEINEN Phasenbericht "
+    "(Phasenberichte entstehen erst ab der Phase Konzept).\n"
+    "- Lieferergebnisse der Initialisierung sind: Stakeholderliste, Studie, "
+    "Rechtsgrundlagenanalyse, Schutzbedarfsanalyse, Beschaffungsanalyse (sofern "
+    "Beschaffung), Projektmanagementplan und Durchfuehrungsauftrag.\n"
+    "- Die drei Entscheidaufgaben enden je mit einem Meilenstein: "
+    "Projektinitialisierungsfreigabe, Entscheid 'Weiteres Vorgehen', Durchfuehrungsfreigabe.\n"
+    "- Verantwortlichkeiten werden auf Rollenebene angegeben "
+    "(z.B. Auftraggeber, Projektleiter), nicht mit Personennamen."
+)
+
 
 def extract_fields(llm_client, section, raw_text):
     if section.get("type") == "free_text":
@@ -44,7 +61,8 @@ def _extract_free_text(llm_client, section_title, raw_text):
         "Du bist ein erfahrener Projektmanagement-Berater und verfasst offizielle "
         "Projektdokumente nach HERMES 2022 fuer Schweizer Behoerden. "
         "Dein Ziel: sachliche, praezise Behördentexte auf Hochdeutsch. "
-        "Antworte ausschliesslich mit validem JSON, keine weiteren Erklaerungen."
+        "Antworte ausschliesslich mit validem JSON, keine weiteren Erklaerungen.\n\n"
+        + HERMES_RULES
     )
     user = (
         f"Schreibe den folgenden muendlichen Beitrag als formellen Sachtext "
@@ -82,7 +100,8 @@ def _extract_table(llm_client, section_title, columns, raw_text):
     system = (
         "Du bist ein Projektmanagement-Assistent fuer HERMES 2022. "
         "Extrahiere strukturierte Tabelleneintraege aus muendlichen Antworten. "
-        "Antworte ausschliesslich mit einem validen JSON-Array, keine weiteren Erklaerungen."
+        "Antworte ausschliesslich mit einem validen JSON-Array, keine weiteren Erklaerungen.\n\n"
+        + HERMES_RULES
     )
     user = (
         f"Extrahiere die Eintraege fuer den PIA-Abschnitt \"{section_title}\" "
@@ -125,7 +144,8 @@ def generate_followups(llm_client, section, raw_text):
         "Prüfe ob seine Antwort die wichtigen Aspekte des Abschnitts abdeckt. "
         "Sei sparsam: stelle NUR eine Nachfrage wenn wirklich etwas Wichtiges fehlt. "
         "Wenn die Antwort ausreichend ist, gib ein leeres Array zurück. "
-        "Antworte ausschliesslich mit validem JSON."
+        "Antworte ausschliesslich mit validem JSON.\n\n"
+        + HERMES_RULES
     )
     user = (
         f"Abschnitt: \"{section['title']}\"\n"
@@ -179,7 +199,8 @@ def _suggest_table(llm_client, section, context):
         "Der Projektleiter hat zu diesem Abschnitt noch nichts geliefert und bittet dich "
         "um einen fachlich sinnvollen Erstvorschlag, den er danach pruefen kann. "
         "Stuetze dich auf den Projektkontext und uebliche HERMES-Praxis. "
-        "Antworte ausschliesslich mit einem validen JSON-Array, keine Erklaerungen."
+        "Antworte ausschliesslich mit einem validen JSON-Array, keine Erklaerungen.\n\n"
+        + HERMES_RULES
     )
     user = (
         f"PIA-Abschnitt: \"{section['title']}\"\n\n"
@@ -208,7 +229,8 @@ def _suggest_free_text(llm_client, section, context):
         "Du bist ein erfahrener HERMES-2022-Projektberater fuer Schweizer Behoerden. "
         "Der Projektleiter hat zu diesem Abschnitt noch nichts geliefert und bittet dich "
         "um einen fachlich sinnvollen Erstentwurf im sachlichen Behoerdenstil. "
-        "Antworte ausschliesslich mit validem JSON, keine Erklaerungen."
+        "Antworte ausschliesslich mit validem JSON, keine Erklaerungen.\n\n"
+        + HERMES_RULES
     )
     user = (
         f"PIA-Abschnitt: \"{section['title']}\"\n\n"
