@@ -166,8 +166,10 @@ def test_decision_followup_wird_als_ergebnis_zeile_uebernommen():
     svc._apply_followup(section, section_answer, followup, raw_text=None)
     rows = section_answer["extracted"]
     assert len(rows) == 2
-    assert rows[1]["ergebnis"] == "Beschaffungsanalyse"
-    assert rows[1]["abnahme"] == "Anwendervertreter"
+    besch = next(r for r in rows if r["ergebnis"] == "Beschaffungsanalyse")
+    assert besch["abnahme"] == "Anwendervertreter"
+    # Abhängigkeit: Beschaffungsanalyse fliesst in die Studie -> davor einsortiert
+    assert rows.index(besch) < next(i for i, r in enumerate(rows) if r["ergebnis"] == "Studie")
 
 
 def test_fill_from_suggestion_appends_not_replaces():

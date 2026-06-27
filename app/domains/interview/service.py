@@ -563,6 +563,10 @@ class InterviewService:
                         new_row[k] = est[k]
 
             rows.append(new_row)
+            # Ergebnisse/Termine nach dem Einfügen wieder in Abhängigkeitsreihenfolge
+            # bringen (z.B. Beschaffungsanalyse/Prototyp gehören vor die Studie).
+            if section.get("id") == "termine":
+                _sort_termine_rows(rows)
         elif section.get("type") == "free_text":
             if not suggestion:
                 return
@@ -810,7 +814,7 @@ class InterviewService:
                 "status": "pending",
                 "row": {
                     "ergebnis": "Beschaffungsanalyse",
-                    "termin": _single_termin(start_datum, 8),
+                    "termin": _single_termin(start_datum, "Beschaffungsanalyse"),
                     "abnahme": "Anwendervertreter",
                     "pruefmethode": "Inhaltliche Pruefung",
                 },
@@ -826,7 +830,7 @@ class InterviewService:
                 "status": "pending",
                 "row": {
                     "ergebnis": ergebnis,
-                    "termin": _single_termin(start_datum, 6),
+                    "termin": _single_termin(start_datum, ergebnis),
                     "abnahme": "Entwickler",
                     "pruefmethode": "Inhaltliche Pruefung",
                 },
@@ -846,8 +850,46 @@ class InterviewService:
 # Modul-Hilfsfunktionen                                                #
 # ------------------------------------------------------------------ #
 
-def _single_termin(start_datum_str, weeks):
-    """Liefertermin für ein einzelnes Zusatz-Ergebnis (relativ zum Start)."""
+def _termin_woche(ergebnis, default=5):
+    """Wochen-Rang eines Initialisierungs-Ergebnisses nach HERMES-Abhängigkeiten.
+
+    Die Reihenfolge bildet die Pfeilrichtungen der HERMES-Modulübersicht ab:
+    Rechtsgrundlagen-/Schutzbedarfs-/Beschaffungsanalyse und Prototyp fliessen in
+    die STUDIE -> danach Entscheid 'Weiteres Vorgehen' -> Projektmanagementplan ->
+    (aus Studie + PM-Plan) Durchführungsauftrag -> Entscheid 'Durchführungsfreigabe'.
+    """
+    t = (ergebnis or "").lower()
+    if "stakeholder" in t:
+        return 2
+    if "rechtsgrundlagen" in t:
+        return 3
+    if "schutzbedarf" in t:
+        return 3
+    if "beschaffung" in t:
+        return 3
+    if "prototyp" in t:
+        return 4
+    if "studie" in t:
+        return 5
+    if "weiteres vorgehen" in t:
+        return 6
+    if "managementplan" in t:
+        return 7
+    if "durchf" in t and "auftrag" in t:
+        return 8
+    if "durchf" in t and "freigabe" in t:
+        return 9
+    return default
+
+
+def _sort_termine_rows(rows):
+    """Sortiert Lieferergebnisse stabil nach ihrem HERMES-Abhängigkeitsrang."""
+    if isinstance(rows, list):
+        rows.sort(key=lambda r: _termin_woche(r.get("ergebnis", "")) if isinstance(r, dict) else 99)
+    return rows
+
+
+def _termin_datum(start_datum_str, weeks):
     from datetime import date as _date, timedelta as _timedelta
     try:
         base = _date.fromisoformat(start_datum_str) if start_datum_str else _date.today()
@@ -856,24 +898,23 @@ def _single_termin(start_datum_str, weeks):
     return (base + _timedelta(weeks=weeks)).strftime("%d.%m.%Y")
 
 
-def _assign_termine_dates(rows, start_datum_str):
-    """Setzt je Ergebnis einen Liefertermin relativ zum Initialisierungs-Start.
+def _single_termin(start_datum_str, ergebnis):
+    """Liefertermin für ein Zusatz-Ergebnis (Beschaffungsanalyse/Prototyp), nach Rang."""
+    return _termin_datum(start_datum_str, _termin_woche(ergebnis))
 
-    Basis: angegebenes Startdatum (ISO), sonst heute. Die Default-Dauern
-    (Wochen ab Start) sind Heuristik – später aus dem pseudonymisierten Korpus ableitbar.
+
+def _assign_termine_dates(rows, start_datum_str):
+    """Setzt je Ergebnis einen Liefertermin nach HERMES-Abhängigkeitsrang und
+    sortiert die Zeilen entsprechend (Studie nach den einfliessenden Analysen usw.).
+
+    Basis: angegebenes Startdatum (ISO), sonst heute. Die Wochen-Raenge bilden die
+    Abhängigkeiten ab; absolute Dauern bleiben Heuristik (später aus Korpus ableitbar).
     """
-    from datetime import date as _date, timedelta as _timedelta
-    try:
-        base = _date.fromisoformat(start_datum_str) if start_datum_str else _date.today()
-    except (ValueError, TypeError):
-        base = _date.today()
-    # An die 8 kanonischen Initialisierungs-Ergebnisse angelehnte Wochen-Offsets.
-    wochen = [1, 4, 4, 5, 6, 7, 8, 9]
-    for i, r in enumerate(rows):
+    for r in rows:
         if not isinstance(r, dict) or r.get("termin"):
             continue
-        w = wochen[i] if i < len(wochen) else (i + 1)
-        r["termin"] = (base + _timedelta(weeks=w)).strftime("%d.%m.%Y")
+        r["termin"] = _termin_datum(start_datum_str, _termin_woche(r.get("ergebnis", "")))
+    _sort_termine_rows(rows)
     return rows
 
 
