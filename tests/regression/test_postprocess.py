@@ -1,8 +1,56 @@
 """Beweist: deterministische HERMES-Korrekturen nach dem Befüllen eines Abschnitts."""
 from app.config import get_config
 from app.domains.catalog.service import CatalogService
-from app.domains.interview.service import InterviewService
+from app.domains.interview.service import (
+    InterviewService,
+    _assign_termine_dates,
+    _termin_woche,
+)
 from app.domains.method.service import MethodService
+
+
+def _pos(rows, needle):
+    for i, r in enumerate(rows):
+        if needle.lower() in r["ergebnis"].lower():
+            return i
+    raise AssertionError(f"{needle} nicht gefunden")
+
+
+def test_termin_woche_abhaengigkeitsrang():
+    # Analysen + Prototyp VOR der Studie, danach die Folgeergebnisse
+    assert _termin_woche("Beschaffungsanalyse") < _termin_woche("Studie")
+    assert _termin_woche("Schutzbedarfsanalyse") < _termin_woche("Studie")
+    assert _termin_woche("Prototyp: Fahrzeug") < _termin_woche("Studie")
+    assert _termin_woche("Studie") < _termin_woche("Meilenstein Weiteres Vorgehen")
+    assert _termin_woche("Meilenstein Weiteres Vorgehen") < _termin_woche("Projektmanagementplan")
+    assert _termin_woche("Projektmanagementplan") < _termin_woche("Durchfuehrungsauftrag")
+    assert _termin_woche("Durchfuehrungsauftrag") < _termin_woche("Meilenstein Durchfuehrungsfreigabe")
+
+
+def test_assign_termine_dates_sortiert_nach_abhaengigkeit():
+    rows = [
+        {"ergebnis": "Stakeholder-Liste"},
+        {"ergebnis": "Studie"},
+        {"ergebnis": "Rechtsgrundlagenanalyse"},
+        {"ergebnis": "Schutzbedarfsanalyse"},
+        {"ergebnis": "Meilenstein Weiteres Vorgehen"},
+        {"ergebnis": "Projektmanagementplan"},
+        {"ergebnis": "Durchfuehrungsauftrag"},
+        {"ergebnis": "Meilenstein Durchfuehrungsfreigabe"},
+        {"ergebnis": "Beschaffungsanalyse"},
+        {"ergebnis": "Prototyp: SAP"},
+    ]
+    _assign_termine_dates(rows, "2026-08-03")
+    # Studie kommt nach allen einfliessenden Ergebnissen
+    studie = _pos(rows, "Studie")
+    for vor in ("Rechtsgrundlagen", "Schutzbedarf", "Beschaffungsanalyse", "Prototyp"):
+        assert _pos(rows, vor) < studie, f"{vor} muss vor der Studie liegen"
+    # Folgekette nach der Studie
+    assert studie < _pos(rows, "Weiteres Vorgehen") < _pos(rows, "Projektmanagementplan")
+    assert _pos(rows, "Projektmanagementplan") < _pos(rows, "Durchfuehrungsauftrag")
+    assert _pos(rows, "Durchfuehrungsauftrag") < _pos(rows, "Durchfuehrungsfreigabe")
+    # Alle haben ein Datum
+    assert all(r.get("termin") for r in rows)
 
 
 def _svc():
